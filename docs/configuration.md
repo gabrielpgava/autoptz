@@ -27,7 +27,7 @@ Defaults are the validated, broadcast-sane starting point; one concept = one con
 | `coast_window_ms` | `300` | How long a lost track is coasted before it's dropped. |
 | `framing` | `upper_body` | The single "shot composition" control. Sets the vertical aim point and (mirrored into `zoom_framing`) the auto-zoom tightness: `face`, `head_shoulders`, `upper_body`, `full_body`. |
 | `aim_body_mode` | `torso` | `torso` ignores arms/limbs (steadier aim); `full_silhouette` uses the whole box. |
-| `min_detection_size_frac` | `0.05` | Drop people smaller than this fraction of frame height (ignore distant specks). |
+| `min_detection_size_frac` | `0.02` | Drop detections smaller than 2% of the image height. This helps wide-stage shots; existing saved camera profiles retain their previous setting until edited. |
 | `face_confirm` | `false` | Require a face match before binding a target. |
 
 ## PTZ control
