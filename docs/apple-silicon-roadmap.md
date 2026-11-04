@@ -64,6 +64,8 @@ safe, stable pan/tilt movement over artificially high detection FPS.
 - [ ] Model pan/tilt acceleration and zoom-dependent speed for actual camera models.
 - [ ] Validate 30-minute real-camera soak tests, multi-person switches and
       camera reconnects; build unsigned ARM64 test DMGs for field verification.
+- [ ] Route the fork's in-app updater to `gabrielpgava/autoptz` releases
+      (the upstream default is `AutoPTZ/autoptz`) and validate rollback safety.
 - [ ] Confirm third-party model/data licensing before commercial distribution.
 
 ## Working practice
