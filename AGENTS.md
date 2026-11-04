@@ -12,8 +12,10 @@ with transparent accelerator use and stable/safe physical PTZ motion. See
 ## Workflow
 
 1. Read the roadmap and the current module/test before changing it.
-2. Work in a short-lived `feat/`, `fix/` or `perf/` branch and create a PR;
-   do not push experimental changes directly to `main`.
+2. Work in a short-lived `feat/`, `fix/` or `perf/` branch and create a PR
+   **only within `gabrielpgava/autoptz`**; do not push experimental changes
+   directly to `main`. NEVER create a pull request, issue, branch or commit in
+   `AutoPTZ/autoptz` (upstream). Treat upstream as read-only reference material.
 3. Use conventional commits and maintain corresponding tests/docs.
 4. Keep feature flags for changes that affect identity switching, inference
    cadence, model loading, or physical PTZ movement.
