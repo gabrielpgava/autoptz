@@ -502,3 +502,39 @@ class TestTrackerCreationFps:
         tracker.update([], FRAME, fps=1.0)  # first frame during warmup
         impl = tracker._impl
         assert getattr(impl, "max_time_lost", 0) >= 30
+
+
+# ── Runtime backend diagnostics / broken optional BoxMOT ──────────────────────
+
+
+def test_tracker_backend_name_reflects_instantiated_backend() -> None:
+    from autoptz.engine.pipeline.track import _SimpleIoUTracker
+
+    assert Tracker().backend_name == "initializing"
+    assert Tracker(_impl=_make_impl()).backend_name == "botsort"
+    assert Tracker(_impl=_SimpleIoUTracker()).backend_name == "simple_iou"
+
+
+def test_broken_boxmot_import_keeps_person_detections(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An installed but broken BoxMOT must not blank the camera's detections."""
+    import builtins
+
+    from autoptz.engine.pipeline import track as track_mod
+
+    original_import = builtins.__import__
+
+    def fail_boxmot_tracker_import(name: str, *args: object, **kwargs: object) -> object:
+        if name == "boxmot.trackers":
+            raise RuntimeError("simulated broken BoxMOT runtime")
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(track_mod, "_probe_boxmot", lambda: True)
+    monkeypatch.setattr(builtins, "__import__", fail_boxmot_tracker_import)
+
+    tracker = Tracker()
+    tracks = tracker.update([_det(10, 20, 100, 200)], FRAME)
+    assert tracker.backend_name == "simple_iou"
+    assert len(tracks) == 1
+    assert tracks[0].bbox.area() > 0

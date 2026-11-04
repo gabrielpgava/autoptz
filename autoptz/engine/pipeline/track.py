@@ -349,15 +349,24 @@ def _create_boxmot_tracker(
 
     want_reid = reid_weights is not None
     try:
-        tracker = _instantiate(want_reid)
-    except Exception:  # noqa: BLE001
-        if want_reid:
-            # ReID weights/download failed — fall back to motion-only so tracking
-            # still works (never let an optional appearance model kill tracking).
+        try:
+            tracker = _instantiate(want_reid)
+        except Exception:  # noqa: BLE001
+            if not want_reid:
+                raise
+            # A failed appearance model must not prevent the motion-only tracker.
             log.warning("ReID init failed; falling back to motion-only tracking.", exc_info=True)
             tracker = _instantiate(False)
-        else:
-            raise
+    except Exception:  # noqa: BLE001
+        # A missing/incompatible/broken BoxMOT runtime must not take down the
+        # entire detect->track pipeline: keep boxes and basic target selection.
+        log.warning(
+            "BoxMOT %s initialization failed; using the lightweight IoU tracker. "
+            "Target identity is less reliable through crossings.",
+            tracker_type.value,
+            exc_info=True,
+        )
+        return _SimpleIoUTracker(max_age=max_age)
     # BoxMOT re-raises its logger to INFO during construction; re-silence it now
     # so the per-frame ECC warnings don't reach the console.
     _quiet_boxmot_logging()
@@ -500,6 +509,19 @@ class Tracker:
         if hasattr(self, "_impl_pending"):
             self._impl = None
             self._impl_pending = True
+
+    @property
+    def backend_name(self) -> str:
+        """Actual tracker backend, not merely the operator's requested setting.
+
+        A broken BoxMOT installation can degrade to the IoU implementation at
+        runtime. Telemetry must expose that instead of claiming BoT-SORT works.
+        """
+        if self._impl is None:
+            return "initializing"
+        if isinstance(self._impl, _SimpleIoUTracker):
+            return "simple_iou"
+        return self._tracker_type.value
 
     @property
     def active_count(self) -> int:

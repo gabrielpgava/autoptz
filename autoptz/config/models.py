@@ -113,7 +113,7 @@ class TrackingConfig(BaseModel, frozen=True):
     # Ignore people whose detection-box HEIGHT is smaller than this fraction of the
     # frame height — drops distant specks so the engine doesn't chase/save every
     # far-away person.  0.0 disables the gate.
-    min_detection_size_frac: float = Field(default=0.05, ge=0.0, le=1.0)
+    min_detection_size_frac: float = Field(default=0.02, ge=0.0, le=1.0)
     # Unified "one backbone, two heads": use a single YOLO11-pose model that emits
     # person boxes AND keypoints in one forward pass (feeding both the tracker and
     # the pose-stable aim), instead of a separate detector + per-target pose pass.

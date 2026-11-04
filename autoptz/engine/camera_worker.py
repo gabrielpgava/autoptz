@@ -5720,6 +5720,22 @@ class CameraWorker:
         target_fps = self._target_fps()
         tracking = self.config.tracking
         ignore_arms = getattr(tracking, "aim_body_mode", "torso") == "torso"
+        tracker_obj = getattr(self._detect, "tracker", None) if self._detect is not None else None
+        requested_tracker = str(getattr(tracking, "tracker", ""))
+        effective_tracker = str(getattr(tracker_obj, "backend_name", "") or "")
+        tracker_fallback = effective_tracker == "simple_iou"
+        tracker_enabled = self._feature("tracking")
+        tracker_state = self._stage_status(
+            "track", enabled=tracker_enabled, available=self._detect is not None
+        )
+        if tracker_enabled and tracker_fallback:
+            tracker_state = "degraded"
+        tracker_detail = (
+            "Lightweight IoU fallback: IDs may switch when people cross. "
+            "Check the BoxMOT installation and startup logs."
+            if tracker_fallback
+            else "manual targets clear on rebuild; identity targets reacquire"
+        )
         # When detection is on but no detector built and the pool knows why, show
         # "failed" + the reason instead of a generic disabled/idle state — so a
         # silent model fall-back doesn't read as "the tier doesn't exist".
@@ -5759,14 +5775,12 @@ class CameraWorker:
             RuntimeServiceInfo(
                 key="tracker",
                 name="Tracker",
-                configured=str(getattr(tracking, "tracker", "")),
-                enabled=self._feature("tracking"),
-                active=bool(self._feature("tracking") and self._detect is not None),
-                state=self._stage_status(
-                    "track", enabled=self._feature("tracking"), available=self._detect is not None
-                ),
-                backend=str(getattr(tracking, "tracker", "")),
-                detail="manual targets clear on rebuild; identity targets reacquire",
+                configured=requested_tracker,
+                enabled=tracker_enabled,
+                active=bool(tracker_enabled and self._detect is not None),
+                state=tracker_state,
+                backend=effective_tracker or requested_tracker,
+                detail=tracker_detail,
             ),
             self._reid_service_row(tracking),
             RuntimeServiceInfo(

@@ -87,6 +87,9 @@ class TestModels:
     def test_tracking_mode_defaults_to_stable(self) -> None:
         assert TrackingConfig().tracking_mode == "stable"
 
+    def test_tracking_default_keeps_small_stage_subjects(self) -> None:
+        assert TrackingConfig().min_detection_size_frac == pytest.approx(0.02)
+
     def test_tracking_mode_rejects_unknown(self) -> None:
         with pytest.raises(ValidationError):
             TrackingConfig(tracking_mode="sticky")
