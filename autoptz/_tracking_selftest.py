@@ -48,7 +48,8 @@ def check_tracking_runtime() -> dict[str, Any]:
         report["boxmot_version"] = str(getattr(boxmot, "__version__", "unknown"))
         trackers = importlib.import_module("boxmot.trackers")
         missing = [
-            name for name in ("BotSort", "ByteTrack", "DeepOcSort")
+            name
+            for name in ("BotSort", "ByteTrack", "DeepOcSort")
             if not hasattr(trackers, name)
         ]
         if missing:
