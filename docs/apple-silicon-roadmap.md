@@ -32,8 +32,11 @@ safe, stable pan/tilt movement over artificially high detection FPS.
 - [x] Safe IoU fallback if BoxMOT fails to initialize; report the **real** tracker.
 - [x] Adjust the default small-person cutoff for wide shots (2% frame height);
       existing saved profiles require manual adjustment.
-- [ ] Verify whether the release DMG bundles and can initialize BoxMOT + OSNet;
-      the default macOS build currently uses the lean install profile.
+- [x] Configure the ARM64 build to install BoxMOT/Torch and require a source and
+      frozen-bundle runtime preflight before packaging succeeds.
+- [ ] Confirm the preflight on macOS CI and test actual OSNet model loading and
+      reacquisition on a real M-series Mac (the import-only ReID check does not
+      validate downloadable weights).
 - [ ] Record runtime backends, model names and latency in a concise report.
 - [ ] Run the existing `tools/bench/ep_compare.py` and full tracking benchmark
       on an actual Apple Silicon Mac and preserve the results.

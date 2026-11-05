@@ -27,6 +27,30 @@ echo "==> AutoPTZ macOS build"
 echo "    repo:  ${ROOT}"
 echo "    venv:  ${VENV}"
 
+# ARM64 releases must include advanced BoxMOT tracking. The upstream default
+# installer is torch-free; without an explicit extra, a healthy-looking DMG
+# silently runs the IoU fallback and loses presenter identity at crossings.
+# Keep Intel's existing lean profile unless explicitly enabled. Local builders
+# may opt out for experiments with AUTOPTZ_MACOS_TRACKING=0.
+ARCH="$(uname -m)"
+TRACKING_MODE="${AUTOPTZ_MACOS_TRACKING:-auto}"
+case "${TRACKING_MODE}" in
+    auto)
+        if [[ "${ARCH}" == "arm64" ]]; then
+            TRACKING_MODE=1
+        else
+            TRACKING_MODE=0
+        fi
+        ;;
+    0|1) ;;
+    *)
+        echo "!! AUTOPTZ_MACOS_TRACKING must be auto, 0 or 1." >&2
+        exit 1
+        ;;
+esac
+echo "    arch:  ${ARCH}"
+echo "    advanced tracker required: ${TRACKING_MODE}"
+
 # ── signing config (opt-in) ──────────────────────────────────────────────────
 # Sign + notarize only when MACOS_SIGN_IDENTITY is set (CI sets it from repo
 # secrets; locally, export it to sign with your Developer ID, e.g.
@@ -153,9 +177,22 @@ fi
 # ── 2. dependencies ─────────────────────────────────────────────────────────
 if [[ "${SKIP_INSTALL:-0}" != "1" ]]; then
     echo "==> Installing dependencies"
-    "${PY}" tools/install.py --upgrade-pip --packaging --editable --accelerator cpu
+    # On macOS, --accelerator auto still uses the base ONNX Runtime wheel,
+    # which exposes CoreML when supported. It does NOT force CPU inference.
+    INSTALL_ARGS=(--upgrade-pip --packaging --editable --accelerator auto)
+    if [[ "${TRACKING_MODE}" == "1" ]]; then
+        INSTALL_ARGS+=(--with-tracking)
+    fi
+    "${PY}" tools/install.py "${INSTALL_ARGS[@]}"
 else
     echo "==> SKIP_INSTALL=1 — using existing venv as-is"
+fi
+
+# A non-importable tracker is a release-blocking error, not a silent downgrade.
+# Test the source venv here, then the frozen application after PyInstaller.
+if [[ "${TRACKING_MODE}" == "1" ]]; then
+    echo "==> Verifying source BoxMOT / OSNet API"
+    "${PY}" -m autoptz --check-tracking
 fi
 
 # ── 3. pre-fetch detector, pose, and face models so they ship inside the app ──
@@ -189,6 +226,11 @@ echo "==> Built ${APP}"
 echo "==> Verifying CFBundleName (the app-name fix):"
 /usr/libexec/PlistBuddy -c 'Print :CFBundleName' "${APP}/Contents/Info.plist"
 plutil -lint "${APP}/Contents/Info.plist"
+
+if [[ "${TRACKING_MODE}" == "1" ]]; then
+    echo "==> Verifying advanced tracker inside frozen macOS bundle"
+    "${APP}/Contents/MacOS/AutoPTZ" --check-tracking
+fi
 
 # ── 5b. sign the .app (opt-in) ───────────────────────────────────────────────
 # Deep-sign with the hardened runtime + entitlements so the bundle is notarizable.

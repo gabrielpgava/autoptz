@@ -108,3 +108,10 @@ jobs:
         # Run with spawn-safe multiprocessing; timeout guard
         run: python -m autoptz --selftest --log-level INFO
         timeout-minutes: 2
+
+      - name: Advanced-tracking runtime preflight (Apple Silicon)
+        if: matrix.os == 'macos-14'
+        # The dev environment installs the tracking extra. Import/initialise the
+        # actual tracker API; do not infer availability from the package name.
+        run: python -m autoptz --check-tracking
+        timeout-minutes: 3
