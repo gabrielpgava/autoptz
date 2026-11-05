@@ -29,8 +29,14 @@ def test_tracking_preflight_returns_failure_when_torch_is_missing(monkeypatch) -
     original = importlib.import_module
 
     def reject_torch(name: str, *args, **kwargs):
-        if name in ("torch", "boxmot", "boxmot.trackers", "boxmot.reid",
-                    "boxmot.appearance.reid_auto_backend"):
+        missing_modules = {
+            "torch",
+            "boxmot",
+            "boxmot.trackers",
+            "boxmot.reid",
+            "boxmot.appearance.reid_auto_backend",
+        }
+        if name in missing_modules:
             raise ImportError("simulated missing optional tracking stack")
         return original(name, *args, **kwargs)
 
