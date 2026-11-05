@@ -3,7 +3,8 @@
 Usage::
 
     python -m autoptz              # launch the UI (default)
-    python -m autoptz --selftest   # verify foundations and exit
+    python -m autoptz --selftest       # verify foundations and exit
+    python -m autoptz --check-tracking # verify bundled BoxMOT / ReID imports
     python -m autoptz --help
 """
 
@@ -132,6 +133,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(prog="autoptz", description="AutoPTZ v2")
     parser.add_argument("--selftest", action="store_true", help="Run foundation selftest and exit")
     parser.add_argument(
+        "--check-tracking",
+        action="store_true",
+        help="Verify the installed/frozen BoxMOT tracker and ReID API, then exit.",
+    )
+    parser.add_argument(
         "--log-level", default="WARNING", choices=["DEBUG", "INFO", "WARNING", "ERROR"]
     )
     parser.add_argument(
@@ -193,6 +199,11 @@ def main() -> None:
     if args.selftest:
         selftest()
         return
+
+    if args.check_tracking:
+        from autoptz._tracking_selftest import run_tracking_preflight
+
+        raise SystemExit(run_tracking_preflight())
 
     if args.bench:
         from autoptz.engine.runtime.bench import run_acceleration_bench

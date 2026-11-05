@@ -1,4 +1,25 @@
-# Building installers
+# Building
+
+## Advanced tracking in Apple Silicon builds
+
+The macOS ARM64 `packaging/build_macos.sh` now installs the optional BoxMOT /
+PyTorch tracking stack by default. It runs `python -m autoptz --check-tracking`
+against both the build environment and the PyInstaller-frozen `.app` executable.
+The build fails rather than shipping an ARM64 DMG that silently uses a lightweight
+IoU tracker. The Intel macOS build remains lean unless enabled explicitly.
+
+For a local ARM64 debugging build without BoxMOT, set
+`AUTOPTZ_MACOS_TRACKING=0`. To require BoxMOT for an Intel test build, set
+`AUTOPTZ_MACOS_TRACKING=1`. `SKIP_INSTALL=1` skips installation **but does not
+skip** the tracker preflight when tracking is required.
+
+The preflight checks Torch and BoxMOT imports, the working BoT-SORT instance,
+and the expected ReID API. It **does not download or run OSNet model weights** and
+cannot prove use of the Apple Neural Engine. Before using a DMG in production,
+run a real ReID/NDI/PTZ soak test on Apple Silicon. Bundle size and startup
+time may increase substantially due to PyTorch.
+
+ installers
 
 AutoPTZ ships as a PyInstaller bundle per OS, packaged into a `.dmg` (macOS),
 an Inno Setup `.exe` installer (Windows), and an `AppImage` (Linux). The
